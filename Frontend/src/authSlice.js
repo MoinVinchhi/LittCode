@@ -18,7 +18,10 @@ export const loginUser = createAsyncThunk (
     'auth/login',
     async (credentials, { rejectWithValue }) => {
         try {
+            // DEBUG:
+            console.log("request sent:", credentials);
             const response = await axiosClient.post('/user/login', credentials);
+            console.log("response received:", response.data);
             return response.data.user;
         }
         catch (error) {
