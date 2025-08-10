@@ -12,14 +12,26 @@ const videoRouter = require('./routes/videoRoute');
 const cors = require('cors');
 
 
-app.use(cors ({
-    origin: 'http://localhost:5173',
+const allowedOrigins = [
+    process.env.FRONTEND_URI,
+    'http://localhost:5173'
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error('CORS not allowed from this origin: ' + origin), false);
+    },
     credentials: true
-}))
+}));
+
 
 app.use(express.json());
 app.use(cookieParser());
-
 
 app.use('/user', authRouter);
 app.use('/problem', problemRouter);
@@ -30,12 +42,13 @@ app.use('/video', videoRouter);
 
 const InitializeConnection = async () => {
     try {
-        await Promise.all[main(), redisClient.connect()];
+        await Promise.all([main(), redisClient.connect()]);
         console.log('DB Connected Successfully')
 
-        app.listen(process.env.PORT, () => {
-        console.log("Server Is Listening On PORT: " + process.env.PORT);
-        })
+        const PORT = process.env.PORT || 5000;
+        app.listen(PORT, () => {
+        console.log("Server Is Listening On PORT: " + PORT);
+        });
     }
     catch (err) {
         console.log("Error: " + err.message);
