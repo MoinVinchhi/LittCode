@@ -13,8 +13,8 @@ const validate = (data) => {
     if (!validator.isEmail(data.emailId))
         throw new Error('Invalid Email');
 
-    if (!validator.isStrongPassword(data.password))
-        throw new Error('Weak Password');
+    // if (!validator.isStrongPassword(data.password))
+    //     throw new Error('Weak Password');
 
     if (data.firstName.length < 3 || data.firstName.length > 10) 
         throw new Error("Firstname's Length Is Invalid");
