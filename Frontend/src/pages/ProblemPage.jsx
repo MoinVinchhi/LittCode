@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import Editor from '@monaco-editor/react';
-import { useParams } from 'react-router';
+import { useParams, useNavigate } from 'react-router';
 import axiosClient from "../utils/axiosClient"
 import SubmissionHistory from '../components/SubmissionHistory';
 import ChatAI from '../components/ChatAI';
-import { Terminal, Code } from 'lucide-react';
+import { Terminal, Code, Home } from 'lucide-react';
 import Editorial from '../components/Editorial';
+import ErrorBox from '../components/ErrorBox';
 
 
 const ProblemPage = () => {
@@ -16,10 +17,13 @@ const ProblemPage = () => {
   const [loading, setLoading] = useState(false);
   const [runResult, setRunResult] = useState(null);
   const [submitResult, setSubmitResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [activeLeftTab, setActiveLeftTab] = useState('description');
   const [activeRightTab, setActiveRightTab] = useState('code');
   const editorRef = useRef(null);
   let {problemId} = useParams();
+  const navigate = useNavigate();
 
   const { handleSubmit } = useForm();
 
@@ -51,6 +55,7 @@ const ProblemPage = () => {
         
       } catch (error) {
         console.error('Error fetching problem:', error);
+        setError(error.response?.data || 'Failed to fetch problem');
         setLoading(false);
       }
     };
@@ -99,11 +104,19 @@ const ProblemPage = () => {
       });
 
       setRunResult(response.data);
+      setError(null);
+      if (response.data.success) {
+        // Show success popup
+        if (window.popupManager) {
+          window.popupManager.showRun();
+        }
+      }
       setLoading(false);
       setActiveRightTab('testcase');
       
     } catch (error) {
       console.error('Error running code: ', error);
+      setError(error.response?.data || 'Failed to run code');
       setRunResult({
         success: false,
         error: 'Internal server error'
@@ -124,11 +137,19 @@ const ProblemPage = () => {
       });
 
        setSubmitResult(response.data);
+       setError(null);
+       if (response.data.accepted) {
+         // Show success popup
+         if (window.popupManager) {
+           window.popupManager.showSubmit('Solution accepted! Congratulations!');
+         }
+       }
        setLoading(false);
        setActiveRightTab('result');
       
     } catch (error) {
       console.error('Error submitting code: ', error);
+      setError(error.response?.data || 'Failed to submit code');
       setSubmitResult(null);
       setLoading(false);
       setActiveRightTab('result');
@@ -164,40 +185,64 @@ const ProblemPage = () => {
   return (
     <div className="h-screen flex bg-base-100">
       
+      {/* Error Display */}
+      {error && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 w-96">
+          <ErrorBox 
+            error={error} 
+            onClose={() => setError(null)}
+            variant="error"
+          />
+        </div>
+      )}
+
+
+      
       {/* Left Panel */}
       <div className="w-1/2 flex flex-col border-r border-base-300">
 
         {/* Left Tabs */}
-        <div className="tabs tabs-bordered bg-base-200 px-4">
+        <div className="tabs tabs-bordered bg-base-200 px-4 flex justify-between items-center">
+          <div className="flex">
+            <button 
+              className={`tab ${(activeLeftTab === 'description') && 'tab-active'}`}
+              onClick={() => setActiveLeftTab('description')}
+            >
+              Description
+            </button>
+            <button 
+              className={`tab ${(activeLeftTab === 'editorial') && 'tab-active'}`}
+              onClick={() => setActiveLeftTab('editorial')}
+            >
+              Editorial
+            </button>
+            <button 
+              className={`tab ${(activeLeftTab === 'solutions') && 'tab-active'}`}
+              onClick={() => setActiveLeftTab('solutions')}
+            >
+              Solutions
+            </button>
+            <button 
+              className={`tab ${(activeLeftTab === 'submissions') && 'tab-active'}`}
+              onClick={() => setActiveLeftTab('submissions')}
+            >
+              Submissions
+            </button>
+            <button 
+              className={`tab ${(activeLeftTab === 'chatAI') && 'tab-active'}`}
+              onClick={() => setActiveLeftTab('chatAI')}
+            >
+              ChatAI
+            </button>
+          </div>
+          
+          {/* LittCode Button */}
           <button 
-            className={`tab ${(activeLeftTab === 'description') && 'tab-active'}`}
-            onClick={() => setActiveLeftTab('description')}
+            onClick={() => navigate('/')}
+            className="btn btn-primary btn-sm btn-outline flex items-center gap-2"
           >
-            Description
-          </button>
-          <button 
-            className={`tab ${(activeLeftTab === 'editorial') && 'tab-active'}`}
-            onClick={() => setActiveLeftTab('editorial')}
-          >
-            Editorial
-          </button>
-          <button 
-            className={`tab ${(activeLeftTab === 'solutions') && 'tab-active'}`}
-            onClick={() => setActiveLeftTab('solutions')}
-          >
-            Solutions
-          </button>
-          <button 
-            className={`tab ${(activeLeftTab === 'submissions') && 'tab-active'}`}
-            onClick={() => setActiveLeftTab('submissions')}
-          >
-            Submissions
-          </button>
-          <button 
-            className={`tab ${(activeLeftTab === 'chatAI') && 'tab-active'}`}
-            onClick={() => setActiveLeftTab('chatAI')}
-          >
-            ChatAI
+            <Home size={20} />
+            LittCode
           </button>
         </div>
 

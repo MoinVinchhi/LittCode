@@ -52,10 +52,14 @@ const createProblem = async (req,res) => {
             problemCreator: req.data._id
         })
 
-        res.status(201).send('Problem Saved Successfully');
+        res.status(201).send('Problem created successfully!');
     }
     catch (err) {
-        res.status(400).send('Error: ' + err.message);
+        if (err.name === 'ValidationError') {
+            res.status(400).send('Please check your input data and try again.');
+        } else {
+            res.status(500).send('Failed to create problem. Please try again.');
+        }
     }
 }
 
@@ -66,12 +70,12 @@ const updateProblem = async (req,res) => {
 
     try {
         if (!id) 
-            return res.status(400).send('ID Field Is Missing');
+            return res.status(400).send('Problem ID is required');
         
         const prevData = await Problem.findById(id);
 
         if (!prevData) 
-            return res.status(401).send('ID Is Not Present In Server');
+            return res.status(404).send('Problem not found');
 
         for (const {language, completeCode} of referenceSolution) {
             

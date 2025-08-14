@@ -5,6 +5,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { loginUser } from '../authSlice';
+import ErrorBox from '../components/ErrorBox';
+import SuccessBox from '../components/SuccessBox';
+import { toast } from "react-toastify";
 
 const loginSchema = z.object({
     emailId: z.email("Invalid email"),
@@ -18,7 +21,7 @@ function Login() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    const { isAuthenticated, loading, error } = useSelector((state) => state.auth);
+    const { isAuthenticated, loading, error, success } = useSelector((state) => state.auth);
     
     const { 
         register,
@@ -34,6 +37,17 @@ function Login() {
     const onSubmit = (data) => {
         dispatch(loginUser(data));
     };
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        try {
+          await dispatch(loginUser(data));
+          toast.success("Logged in successfully!");
+          navigate('/');
+        } catch (err) {
+          toast.error(err.response?.data || "Wrong credentials!");
+        }
+      };
 
     return (
         <>
@@ -95,6 +109,8 @@ function Login() {
                             </label>
                         )}
                     </div>
+
+
 
                     {/* Login Button */}
                     <div className='flex flex-col items-center justify-center'>

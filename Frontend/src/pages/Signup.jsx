@@ -5,6 +5,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { registerUser } from '../authSlice';
+import ErrorBox from '../components/ErrorBox';
+import SuccessBox from '../components/SuccessBox';
+import { toast } from "react-toastify";
 
 const signupSchema = z.object({
     firstName: z.string().min(3, "Name should contain at least 3 characters"),
@@ -18,7 +21,7 @@ function Signup() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    const { isAuthenticated, loading, error } = useSelector((state) => state.auth);
+    const { isAuthenticated, loading, error, success } = useSelector((state) => state.auth);
 
     const {
         register,
@@ -34,9 +37,19 @@ function Signup() {
         dispatch(registerUser(data));
     };
 
+    const handleSignup = async (e) => {
+        e.preventDefault();
+        try {
+            await onSubmit();
+            toast.success("Registered successfully!");
+        } catch (err) {
+            toast.error(err.response?.data || "Registration failed!");
+        }
+    };
+
     return (
         <form
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={handleSignup}
             className="min-h-screen flex justify-center items-center bg-base-200 p-4"
         >
             <div className="card w-full max-w-md p-8 bg-base-100 shadow-xl rounded-lg">
@@ -113,6 +126,8 @@ function Signup() {
                         </label>
                     )}
                 </div>
+
+
 
                 {/* Submit */}
                 <div className='flex flex-col items-center justify-center'>

@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
 import axiosClient from '../utils/axiosClient';
-import { NavLink } from 'react-router';
+import { NavLink, useNavigate } from 'react-router';
+import ConfirmationPopup from './ConfirmationPopup';
+import { Trash2, Home } from 'lucide-react';
 
 const Videos = () => {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedProblem, setSelectedProblem] = useState(null);
+  const [showConfirmPopup, setShowConfirmPopup] = useState(false);
+  const navigate = useNavigate();
 
 
   useEffect(() => {
@@ -26,15 +31,30 @@ const Videos = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this problem?')) return;
-    
+    const problem = problems.find(p => p._id === id);
+    setSelectedProblem(problem);
+    setShowConfirmPopup(true);
+  };
+
+  const confirmDelete = async () => {
     try {
-      await axiosClient.delete(`/video/delete/${id}`);
-      setProblems(problems.filter(problem => problem._id !== id));
+      await axiosClient.delete(`/video/delete/${selectedProblem._id}`);
+      setProblems(problems.filter(problem => problem._id !== selectedProblem._id));
+      setShowConfirmPopup(false);
+      setSelectedProblem(null);
+      
+      // Show success popup
+      if (window.popupManager) {
+        window.popupManager.showDelete();
+      }
     } catch (err) {
       setError(err);
       console.error(err);
     }
+  };
+
+  const handleGoHome = () => {
+    navigate('/');
   };
 
 
@@ -48,21 +68,36 @@ const Videos = () => {
 
   if (error) {
     return (
-      <div className="alert alert-error shadow-lg my-4">
-        <div className='flex items-center gap-4'>
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>{'Failed to delete video: ' + error.response.data.error}</span>
+      <div className="container mx-auto p-4">
+        <div className="mb-6">
+          <ErrorBox 
+            error={error} 
+            onClose={() => setError(null)}
+            variant="error"
+          />
         </div>
+        <button 
+          onClick={() => setError(null)}
+          className="btn btn-primary"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto p-4">
+      {/* Header with LittCode button */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Video Upload And Delete</h1>
+        <button 
+          onClick={handleGoHome}
+          className="btn btn-primary btn-outline flex items-center gap-2"
+        >
+          <Home size={20} />
+          LittCode
+        </button>
       </div>
 
       <div className="overflow-x-auto">
@@ -117,6 +152,19 @@ const Videos = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Confirmation Popup */}
+      <ConfirmationPopup
+        isOpen={showConfirmPopup}
+        onClose={() => setShowConfirmPopup(false)}
+        onConfirm={confirmDelete}
+        title="Delete Video"
+        message={`Are you sure you want to delete the video for "${selectedProblem?.title}"? This action cannot be undone.`}
+        confirmText="Delete Video"
+        cancelText="Cancel"
+        type="danger"
+        icon={<Trash2 className="w-8 h-8 text-red-500" />}
+      />
     </div>
   );
 };

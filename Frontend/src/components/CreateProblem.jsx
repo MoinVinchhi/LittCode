@@ -2,7 +2,10 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router';
+import { useState } from 'react';
 import axiosClient from '../utils/axiosClient';
+import ErrorBox from './ErrorBox';
+import SuccessBox from './SuccessBox';
 
 const problemSchema = z.object({
     title: z.string().min(1, 'Title is required'),
@@ -38,6 +41,8 @@ const problemSchema = z.object({
 
 function CreateProblem() {
     const navigate = useNavigate();
+    const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
 
     const {
         register,
@@ -80,12 +85,18 @@ function CreateProblem() {
 
     const onSubmit = async (data) => {
         try {
+            setError(null);
             await axiosClient.post('/problem/create', data);
-            alert('Problem created successfully!');
-            navigate('/');
+            // Show success popup
+            if (window.popupManager) {
+                window.popupManager.showCreate();
+            }
+            setTimeout(() => {
+                navigate('/');
+            }, 2000);
         }
         catch (error) {
-            alert('Error: ' + error.response?.data?.message || error.message);
+            setError(error.response?.data?.message || error.message || 'Failed to create problem');
         }
     };
 
@@ -97,6 +108,19 @@ function CreateProblem() {
                 <div className='text-center mb-8'>
                     <h1 className='text-3xl font-bold text-base-content mb-2'>Create New Problem</h1>
                 </div>
+
+                {/* Error Display */}
+                {error && (
+                    <div className="mb-6">
+                        <ErrorBox 
+                            error={error} 
+                            onClose={() => setError(null)}
+                            variant="error"
+                        />
+                    </div>
+                )}
+
+
 
                 <form onSubmit={handleSubmit(onSubmit)} className='space-y-8'>
 

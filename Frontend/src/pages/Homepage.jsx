@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { NavLink, useNavigate } from "react-router";
 import { logoutUser } from "../authSlice";
 import axiosClient from "../utils/axiosClient";
+import ErrorBox from "../components/ErrorBox";
 
 
 const getDifficultyBadge = (difficulty) => {
@@ -21,6 +22,7 @@ function Homepage () {
     const { user } = useSelector((state) => state.auth);
     const [problems, setProblems] = useState([]);
     const [solvedProblems, setSolvedProblems] = useState([]);
+    const [error, setError] = useState(null);
     const [filters, setFilters] = useState({
         difficulty: 'all',
         tag: 'all',
@@ -33,9 +35,10 @@ function Homepage () {
                 const { data } = await axiosClient.get('/problem/allproblems');
                 setProblems(data);
             }
-            catch (error) {
-                console.error('Error fetching problems: ' + error.message);
-            }
+                    catch (error) {
+            console.error('Error fetching problems: ' + error.message);
+            setError('Failed to fetch problems');
+        }
         };
 
         const fetchSolvedProblems = async () => {
@@ -43,9 +46,10 @@ function Homepage () {
                 const { data } = await axiosClient.get('/problem/solvedproblems');
                 setSolvedProblems(data);
             }
-            catch (error) {
-                console.error('Error fetching solved problems: ' + error.message);
-            }
+                    catch (error) {
+            console.error('Error fetching solved problems: ' + error.message);
+            setError('Failed to fetch solved problems');
+        }
         };
 
         fetchProblems();
@@ -56,6 +60,12 @@ function Homepage () {
     const handleLogout = () => {
         dispatch(logoutUser());
         setSolvedProblems([]);
+        // Clear any existing errors when logging out
+        setError(null);
+        // Show logout popup
+        if (window.popupManager) {
+            window.popupManager.showLogout();
+        }
     }
 
     //each problem go through these 3 filters, if all 3 matched then only it will be selected, if return 1 then selected otherwise not
@@ -97,6 +107,17 @@ function Homepage () {
 
             {/* Main Content */}
             <div className="container mx-auto p-4">
+                
+                {/* Error Display */}
+                {error && (
+                    <div className="mb-6">
+                        <ErrorBox 
+                            error={error} 
+                            onClose={() => setError(null)}
+                            variant="error"
+                        />
+                    </div>
+                )}
 
                 {/* Filters */}
                 <div className="flex flex-wrap gap-4 mb-6">

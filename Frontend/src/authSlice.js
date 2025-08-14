@@ -18,10 +18,7 @@ export const loginUser = createAsyncThunk (
     'auth/login',
     async (credentials, { rejectWithValue }) => {
         try {
-            // DEBUG:
-            console.log("request sent:", credentials);
             const response = await axiosClient.post('/user/login', credentials);
-            console.log("response received:", response.data);
             return response.data.user;
         }
         catch (error) {
@@ -62,9 +59,15 @@ const authSlice = createSlice ({
         user: null,
         isAuthenticated: false,
         loading: false,
-        error: null
+        error: null,
+        success: null
     },
-    reducers: {},
+    reducers: {
+        clearMessages: (state) => {
+            state.error = null;
+            state.success = null;
+        }
+    },
     extraReducers: (builder) => {
         
         builder
@@ -73,40 +76,61 @@ const authSlice = createSlice ({
             .addCase(registerUser.pending, (state) => {
                 state.loading = true;
                 state.error = null;
+                state.success = null;
             })
             .addCase(registerUser.fulfilled, (state,action) => {
                 state.loading = false;
                 state.isAuthenticated = !!action.payload; //for bool value
                 state.user = action.payload;
+                state.error = null;
+                // Show popup notification
+                if (window.popupManager) {
+                    window.popupManager.showSignup();
+                }
             })
             .addCase(registerUser.rejected, (state,action) => {
                 state.loading = false;
                 state.error = action.payload?.message || 'Something went wrong';
                 state.isAuthenticated = false;
                 state.user = null;
+                // Show error popup
+                if (window.popupManager) {
+                    window.popupManager.showError(action.payload?.message || 'Registration failed. Please try again.');
+                }
             })
 
             //login user cases
             .addCase(loginUser.pending, (state) => {
                 state.loading = true;
                 state.error = null;
+                state.success = null;
             })
             .addCase(loginUser.fulfilled, (state,action) => {
                 state.loading = false;
                 state.isAuthenticated = !!action.payload; //for bool value
                 state.user = action.payload;
+                state.error = null;
+                // Show popup notification
+                if (window.popupManager) {
+                    window.popupManager.showLogin();
+                }
             })
             .addCase(loginUser.rejected, (state,action) => {
                 state.loading = false;
                 state.error = action.payload?.message || 'Something went wrong';
                 state.isAuthenticated = false;
                 state.user = null;
+                // Show error popup
+                if (window.popupManager) {
+                    window.popupManager.showError(action.payload?.message || 'Login failed. Please try again.');
+                }
             })
             
             //check auth cases
             .addCase(checkAuth.pending, (state) => {
                 state.loading = true;
                 state.error = null;
+                state.success = null;
             })
             .addCase(checkAuth.fulfilled, (state,action) => {
                 state.loading = false;
@@ -124,12 +148,17 @@ const authSlice = createSlice ({
             .addCase(logoutUser.pending, (state) => {
                 state.loading = true;
                 state.error = null;
+                state.success = null;
             })
             .addCase(logoutUser.fulfilled, (state) => {
                 state.loading = false;
                 state.isAuthenticated = false;
                 state.user = null;
                 state.error = null;
+                // Show popup notification
+                if (window.popupManager) {
+                    window.popupManager.showLogout();
+                }
             })
             .addCase(logoutUser.rejected, (state,action) => {
                 state.loading = false;

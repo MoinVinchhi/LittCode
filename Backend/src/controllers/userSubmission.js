@@ -10,7 +10,7 @@ const submitCode = async (req,res) => {
         let {code, language} = req.body;
 
         if (!userId || !problemId || !code || !language) 
-            return res.status(400).send('Some Field Missing');
+            return res.status(400).send('Please provide all required fields: code and language');
 
         if (language == 'cpp')
             language = 'c++';
@@ -106,7 +106,7 @@ const runCode = async (req,res) => {
         let {code, language} = req.body;
 
         if (!userId || !problemId || !code || !language) 
-            return res.status(400).send('Some Field(s) Missing');
+            return res.status(400).send('Please provide all required fields: code and language');
 
         if (language == 'cpp')
             language = 'c++';

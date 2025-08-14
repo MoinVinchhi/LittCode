@@ -8,16 +8,16 @@ const validate = (data) => {
     const isAllowed = mandatoryFields.every((k) => Object.keys(data).includes(k));
 
     if (!isAllowed) 
-        throw new Error('Mandatory Field(s) Missing');
+        throw new Error('Please provide all required fields: first name, email, and password');
 
     if (!validator.isEmail(data.emailId))
-        throw new Error('Invalid Email');
+        throw new Error('Please enter a valid email address');
 
     // if (!validator.isStrongPassword(data.password))
     //     throw new Error('Weak Password');
 
     if (data.firstName.length < 3 || data.firstName.length > 10) 
-        throw new Error("Firstname's Length Is Invalid");
+        throw new Error("First name must be between 3 and 10 characters");
 
 }
 

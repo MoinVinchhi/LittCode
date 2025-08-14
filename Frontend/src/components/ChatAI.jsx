@@ -2,12 +2,13 @@ import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import axiosClient from "../utils/axiosClient";
 import { SendHorizontal } from 'lucide-react';
+import ErrorBox from './ErrorBox';
 
 function ChatAi({problem}) {
     const [messages, setMessages] = useState([
-        { role: 'model', parts: [{text: "Hi, How are you"}] },
-        { role: 'user', parts: [{text: "I am Good"}] }
+        { role: 'model', parts: [{text: "Hey! I am your AI assistant. How can I help you?"}] }
     ]);
+    const [error, setError] = useState(null);
 
     const { register, handleSubmit, reset, formState: {errors} } = useForm();
     const messagesEndRef = useRef(null);
@@ -40,6 +41,10 @@ function ChatAi({problem}) {
             }]);
         } catch (error) {
             console.error("API Error:", error);
+            // Show error popup
+            if (window.popupManager) {
+              window.popupManager.showError(error.response?.data?.message || 'Error from AI Chatbot');
+            }
             setMessages(prev => [...prev, { 
                 role: 'model', 
                 parts: [{text: "Error from AI Chatbot" }]
@@ -49,6 +54,8 @@ function ChatAi({problem}) {
 
     return (
         <div className="flex flex-col h-screen max-h-[85vh] min-h-[500px] space-y-2">
+
+            
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.map((msg, index) => (
                     <div 

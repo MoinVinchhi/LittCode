@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import axiosClient from '../utils/axiosClient'
+import ErrorBox from './ErrorBox';
+import SuccessBox from './SuccessBox';
 
 function UploadVideo() {
 
@@ -67,6 +69,11 @@ function UploadVideo() {
     
           setUploadedVideo(metadataResponse.data.videoSolution);
           reset(); // Reset form after successful upload
+          
+          // Show success popup
+          if (window.popupManager) {
+            window.popupManager.showSuccess('Video uploaded successfully!');
+          }
           
         } catch (err) {
           console.error('Upload error:', err);
@@ -165,20 +172,19 @@ function UploadVideo() {
     
                 {/* Error Message */}
                 {errors.root && (
-                  <div className="alert alert-error">
-                    <span>{errors.root.message}</span>
-                  </div>
+                  <ErrorBox 
+                    error={errors.root.message} 
+                    variant="error"
+                    showCloseButton={false}
+                  />
                 )}
     
                 {/* Success Message */}
                 {uploadedVideo && (
-                  <div className="alert alert-success">
-                    <div>
-                      <h3 className="font-bold">Upload Successful!</h3>
-                      <p className="text-sm">Duration: {formatDuration(uploadedVideo.duration)}</p>
-                      <p className="text-sm">Uploaded: {new Date(uploadedVideo.uploadedAt).toLocaleString()}</p>
-                    </div>
-                  </div>
+                  <SuccessBox 
+                    message={`Upload Successful! Duration: ${formatDuration(uploadedVideo.duration)}, Uploaded: ${new Date(uploadedVideo.uploadedAt).toLocaleString()}`}
+                    onClose={() => setUploadedVideo(null)}
+                  />
                 )}
     
                 {/* Upload Button */}
