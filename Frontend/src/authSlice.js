@@ -5,11 +5,16 @@ export const registerUser = createAsyncThunk (
     'auth/register',
     async (userData, { rejectWithValue }) => {
         try {
-            const response = await axiosClient.post('/user/register', userData); //mention the API we want to hit
+            const response = await axiosClient.post('/user/register', userData, {
+                headers: { 'skipErrorPopup': 'true' }
+            });
             return response.data.user;
         }
         catch (error) {
-            return rejectWithValue(error);
+            const errorMessage = error.response?.data?.message || 
+                               error.message || 
+                               'Registration failed. Please try again.';
+            return rejectWithValue({ message: errorMessage });
         }
     }
 );
@@ -18,11 +23,16 @@ export const loginUser = createAsyncThunk (
     'auth/login',
     async (credentials, { rejectWithValue }) => {
         try {
-            const response = await axiosClient.post('/user/login', credentials);
+            const response = await axiosClient.post('/user/login', credentials, {
+                headers: { 'skipErrorPopup': 'true' }
+            });
             return response.data.user;
         }
         catch (error) {
-            return rejectWithValue(error);
+            const errorMessage = error.response?.data?.message || 
+                               error.message || 
+                               'Login failed. Please try again.';
+            return rejectWithValue({ message: errorMessage });
         }
     }
 );
@@ -31,11 +41,16 @@ export const checkAuth = createAsyncThunk (
     'auth/check',
     async (_, { rejectWithValue }) => {
         try {
-            const { data } = await axiosClient.get('/user/check'); 
+            const { data } = await axiosClient.get('/user/check', {
+                headers: { 'skipErrorPopup': 'true' }
+            }); 
             return data.user;
         }
         catch (error) {
-            return rejectWithValue(error);
+            const errorMessage = error.response?.data?.message || 
+                               error.message || 
+                               'Authentication check failed';
+            return rejectWithValue({ message: errorMessage });
         }
     }
 );
@@ -44,11 +59,16 @@ export const logoutUser = createAsyncThunk (
     'auth/logout',
     async (_, { rejectWithValue }) => {
         try {
-            await axiosClient.post('/user/logout'); 
+            await axiosClient.post('/user/logout', {}, {
+                headers: { 'skipErrorPopup': 'true' }
+            }); 
             return null;
         }
         catch (error) {
-            return rejectWithValue(error);
+            const errorMessage = error.response?.data?.message || 
+                               error.message || 
+                               'Logout failed';
+            return rejectWithValue({ message: errorMessage });
         }
     }
 );
@@ -90,12 +110,13 @@ const authSlice = createSlice ({
             })
             .addCase(registerUser.rejected, (state,action) => {
                 state.loading = false;
-                state.error = action.payload?.message || 'Something went wrong';
+                state.error = action.payload?.message || 'Registration failed. Please try again.';
                 state.isAuthenticated = false;
                 state.user = null;
-                // Show error popup
+                // Show specific error popup
                 if (window.popupManager) {
-                    window.popupManager.showError(action.payload?.message || 'Registration failed. Please try again.');
+                    const errorMessage = action.payload?.message || 'Registration failed. Please try again.';
+                    window.popupManager.showError(errorMessage, 'Registration Failed');
                 }
             })
 
@@ -117,12 +138,13 @@ const authSlice = createSlice ({
             })
             .addCase(loginUser.rejected, (state,action) => {
                 state.loading = false;
-                state.error = action.payload?.message || 'Something went wrong';
+                state.error = action.payload?.message || 'Login failed. Please try again.';
                 state.isAuthenticated = false;
                 state.user = null;
-                // Show error popup
+                // Show specific error popup
                 if (window.popupManager) {
-                    window.popupManager.showError(action.payload?.message || 'Login failed. Please try again.');
+                    const errorMessage = action.payload?.message || 'Invalid credentials. Please check your email and password.';
+                    window.popupManager.showError(errorMessage, 'Login Failed');
                 }
             })
             
@@ -139,9 +161,10 @@ const authSlice = createSlice ({
             })
             .addCase(checkAuth.rejected, (state,action) => {
                 state.loading = false;
-                state.error = action.payload?.message || 'Something went wrong';
+                state.error = action.payload?.message || 'Authentication check failed';
                 state.isAuthenticated = false;
                 state.user = null;
+                // Don't show popup for auth check failures as they happen silently
             })
             
             //logout user cases
@@ -162,9 +185,13 @@ const authSlice = createSlice ({
             })
             .addCase(logoutUser.rejected, (state,action) => {
                 state.loading = false;
-                state.error = action.payload?.message || 'Something went wrong';
+                state.error = action.payload?.message || 'Logout failed';
                 state.isAuthenticated = false;
                 state.user = null;
+                // Show error popup for logout failure
+                if (window.popupManager) {
+                    window.popupManager.showError('Logout failed. Please try again.', 'Logout Error');
+                }
             })
     }
 });

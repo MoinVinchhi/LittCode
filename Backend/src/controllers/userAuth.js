@@ -12,6 +12,15 @@ const register = async (req, res) => {
 
     const { firstName, emailId, password } = req.body;
 
+    // Check if user already exists
+    const existingUser = await User.findOne({ emailId });
+    if (existingUser) {
+      return res.status(400).json({
+        error: true,
+        message: "An account with this email already exists. Please use a different email or try logging in."
+      });
+    }
+
     req.body.password = await bcrypt.hash(password, 10);
     req.body.role = "user";
 
@@ -41,7 +50,18 @@ const register = async (req, res) => {
       message: "User Registered Successfully",
     });
   } catch (err) {
-    res.status(400).send("Error: " + err.message);
+    // Handle MongoDB duplicate key error
+    if (err.code === 11000 && err.keyPattern?.emailId) {
+      return res.status(400).json({
+        error: true,
+        message: "An account with this email already exists. Please use a different email or try logging in."
+      });
+    }
+
+    res.status(400).json({
+      error: true,
+      message: err.message || "Registration failed"
+    });
   }
 };
 
@@ -53,9 +73,11 @@ const login = async (req, res) => {
 
     const user = await User.findOne({ emailId });
 
+    if (!user) throw new Error("User not found. Please check your email address.");
+
     const match = await bcrypt.compare(password, user.password);
 
-    if (!match) throw new Error("Invalid Credentials");
+    if (!match) throw new Error("Invalid password. Please check your credentials.");
         
     const token = jwt.sign(
       { _id: user._id, emailId, role: user.role },
@@ -76,12 +98,15 @@ const login = async (req, res) => {
       role: user.role,
     };
 
-    res.status(201).json({
+    res.status(200).json({
       user: reply,
       message: "User Logged In Successfully",
     });
   } catch (err) {
-    res.status(401).send("Error: " + err.message);
+    res.status(401).json({
+      error: true,
+      message: err.message || "Login failed"
+    });
   }
 };
 
@@ -99,9 +124,14 @@ const logout = async (req, res) => {
       secure: true,
       sameSite: "None",
     });
-    res.send("User Logged Out Successfully");
+    res.status(200).json({
+      message: "User Logged Out Successfully"
+    });
   } catch (err) {
-    res.status(401).send("Error: " + err.message);
+    res.status(401).json({
+      error: true,
+      message: err.message || "Logout failed"
+    });
   }
 };
 

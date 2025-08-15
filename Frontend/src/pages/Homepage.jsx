@@ -4,6 +4,7 @@ import { NavLink, useNavigate } from "react-router";
 import { logoutUser } from "../authSlice";
 import axiosClient from "../utils/axiosClient";
 import ErrorBox from "../components/ErrorBox";
+import { handleApiError } from "../utils/errorHandler";
 
 
 const getDifficultyBadge = (difficulty) => {
@@ -34,28 +35,29 @@ function Homepage () {
             try {
                 const { data } = await axiosClient.get('/problem/allproblems');
                 setProblems(data);
+                setError(null);
+            } catch (error) {
+                console.error('Error fetching problems:', error);
+                const errorMessage = handleApiError(error, 'Failed to load problems');
+                setError(errorMessage);
             }
-                    catch (error) {
-            console.error('Error fetching problems: ' + error.message);
-            setError('Failed to fetch problems');
-        }
         };
 
         const fetchSolvedProblems = async () => {
             try {
                 const { data } = await axiosClient.get('/problem/solvedproblems');
                 setSolvedProblems(data);
+            } catch (error) {
+                console.error('Error fetching solved problems:', error);
+                // Don't show error for solved problems as it's not critical
+                // handleApiError(error, 'Failed to load solved problems status');
             }
-                    catch (error) {
-            console.error('Error fetching solved problems: ' + error.message);
-            setError('Failed to fetch solved problems');
-        }
         };
 
         fetchProblems();
         if (user)
             fetchSolvedProblems();
-    }, [user])
+    }, [user]);
     
     const handleLogout = () => {
         dispatch(logoutUser());

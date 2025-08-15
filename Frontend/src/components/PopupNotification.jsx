@@ -78,7 +78,7 @@ const PopupNotification = ({
   };
 
   const getStyles = () => {
-    const baseStyles = "fixed top-4 right-4 z-50 max-w-sm w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 transform transition-all duration-300 ease-in-out";
+    const baseStyles = "relative z-50 max-w-sm w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 transform transition-all duration-300 ease-in-out";
     
     switch (type) {
       case 'success':
@@ -151,10 +151,13 @@ const PopupNotification = ({
       {duration > 0 && (
         <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-b-lg overflow-hidden">
           <div 
-            className="h-full bg-green-500 transition-all duration-300 ease-linear"
+            className="h-full transition-all duration-300 ease-linear"
             style={{ 
               width: isExiting ? '0%' : '100%',
-              transitionDuration: `${duration}ms`
+              transitionDuration: `${duration}ms`,
+              backgroundColor: type === 'error' ? '#ef4444' : 
+                              type === 'success' ? '#10b981' : 
+                              type === 'warning' ? '#f59e0b' : '#3b82f6'
             }}
           />
         </div>

@@ -5,9 +5,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { loginUser } from '../authSlice';
-import ErrorBox from '../components/ErrorBox';
-import SuccessBox from '../components/SuccessBox';
-import { toast } from "react-toastify";
 
 const loginSchema = z.object({
     emailId: z.email("Invalid email"),
@@ -21,7 +18,7 @@ function Login() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    const { isAuthenticated, loading, error, success } = useSelector((state) => state.auth);
+    const { isAuthenticated, loading } = useSelector((state) => state.auth);
     
     const { 
         register,
@@ -32,22 +29,38 @@ function Login() {
     useEffect(() => {
         if (isAuthenticated) 
             navigate('/');
-    }, [isAuthenticated]);
+    }, [isAuthenticated, navigate]);
 
-    const onSubmit = (data) => {
-        dispatch(loginUser(data));
-    };
-
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        try {
-          await dispatch(loginUser(data));
-          toast.success("Logged in successfully!");
-          navigate('/');
-        } catch (err) {
-          toast.error(err.response?.data || "Wrong credentials!");
+    const onSubmit = async (data, event) => {
+        // Prevent default form submission
+        event?.preventDefault();
+        
+        // Validate form data before submission
+        if (!data.emailId.trim()) {
+            if (window.popupManager) {
+                window.popupManager.showValidationError('Please enter your email address');
+            }
+            return;
         }
-      };
+        
+        if (!data.password.trim()) {
+            if (window.popupManager) {
+                window.popupManager.showValidationError('Please enter your password');
+            }
+            return;
+        }
+
+        const result = await dispatch(loginUser(data));
+        
+        if (loginUser.fulfilled.match(result)) {
+            // Success is handled in authSlice with popup
+            // Navigate only after successful login
+            setTimeout(() => navigate('/'), 1000);
+        } else if (loginUser.rejected.match(result)) {
+            // Error is already handled in authSlice with popup
+            // No need to do anything here as popup is shown in authSlice
+        }
+    };
 
     return (
         <>

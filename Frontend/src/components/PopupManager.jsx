@@ -15,6 +15,10 @@ const PopupManager = () => {
     setPopups(prev => prev.filter(popup => popup.id !== id));
   }, []);
 
+  const clearAllPopups = useCallback(() => {
+    setPopups([]);
+  }, []);
+
   const showSuccess = useCallback((message, title = 'Success', duration = 4000) => {
     return addPopup({
       type: 'success',
@@ -135,6 +139,36 @@ const PopupManager = () => {
     });
   }, [addPopup]);
 
+  const showNetworkError = useCallback((message = 'Network error. Please check your connection.', duration = 6000) => {
+    return addPopup({
+      type: 'error',
+      title: 'Network Error',
+      message,
+      duration,
+      show: true
+    });
+  }, [addPopup]);
+
+  const showValidationError = useCallback((message, duration = 5000) => {
+    return addPopup({
+      type: 'warning',
+      title: 'Validation Error',
+      message,
+      duration,
+      show: true
+    });
+  }, [addPopup]);
+
+  const showServerError = useCallback((message = 'Server error. Please try again later.', duration = 6000) => {
+    return addPopup({
+      type: 'error',
+      title: 'Server Error',
+      message,
+      duration,
+      show: true
+    });
+  }, [addPopup]);
+
   // Make the manager available globally
   React.useEffect(() => {
     window.popupManager = {
@@ -149,19 +183,24 @@ const PopupManager = () => {
       showUpdate,
       showDelete,
       showRun,
-      showSubmit
+      showSubmit,
+      showNetworkError,
+      showValidationError,
+      showServerError,
+      clearAll: clearAllPopups
     };
-  }, [showSuccess, showError, showWarning, showInfo, showLogin, showLogout, showSignup, showCreate, showUpdate, showDelete, showRun, showSubmit]);
+  }, [showSuccess, showError, showWarning, showInfo, showLogin, showLogout, showSignup, showCreate, showUpdate, showDelete, showRun, showSubmit, showNetworkError, showValidationError, showServerError, clearAllPopups]);
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50">
       {popups.map((popup, index) => (
         <div
           key={popup.id}
-          className="pointer-events-auto"
+          className="pointer-events-auto fixed"
           style={{
-            top: `${4 + (index * 5)}rem`,
-            right: '1rem'
+            top: `${1 + (index * 5)}rem`,
+            right: '1rem',
+            zIndex: 1000 + index
           }}
         >
           <PopupNotification

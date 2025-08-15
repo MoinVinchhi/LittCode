@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import axiosClient from '../utils/axiosClient'
 import ErrorBox from './ErrorBox';
-import SuccessBox from './SuccessBox';
+import { handleApiError, handleValidationError, showSuccessMessage } from '../utils/errorHandler';
 
 function UploadVideo() {
 
@@ -28,6 +28,26 @@ function UploadVideo() {
       // Upload video to Cloudinary
       const onSubmit = async (data) => {
         const file = data.videoFile[0];
+        
+        // Validate file
+        if (!file) {
+          handleValidationError('Please select a video file to upload');
+          return;
+        }
+        
+        // Check file size (e.g., max 100MB)
+        const maxSize = 100 * 1024 * 1024; // 100MB
+        if (file.size > maxSize) {
+          handleValidationError('File size must be less than 100MB');
+          return;
+        }
+        
+        // Check file type
+        const allowedTypes = ['video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo'];
+        if (!allowedTypes.includes(file.type)) {
+          handleValidationError('Please upload a valid video file (MP4, MPEG, MOV, AVI)');
+          return;
+        }
         
         setUploading(true);
         setUploadProgress(0);
@@ -71,15 +91,14 @@ function UploadVideo() {
           reset(); // Reset form after successful upload
           
           // Show success popup
-          if (window.popupManager) {
-            window.popupManager.showSuccess('Video uploaded successfully!');
-          }
+          showSuccessMessage('create', 'Video uploaded successfully!');
           
         } catch (err) {
           console.error('Upload error:', err);
+          const errorMessage = handleApiError(err, 'Failed to upload video. Please try again.');
           setError('root', {
             type: 'manual',
-            message: err.response?.data?.message || 'Upload failed. Please try again.'
+            message: errorMessage
           });
         } finally {
           setUploading(false);

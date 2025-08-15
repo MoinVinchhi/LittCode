@@ -33,9 +33,14 @@ const ProblemPage = () => {
     const fetchProblem = async () => {
 
       setLoading(true);
+      setError(null);
       
       try {
         const response = await axiosClient.get(`/problem/problemid/${problemId}`);
+
+        if (!response.data) {
+          throw new Error('Problem not found');
+        }
 
         const initialCode = response.data.startCode.find((sc) => {
         
@@ -47,21 +52,27 @@ const ProblemPage = () => {
             return true;
 
           return false;
-        })?.initialCode || 'Hello';
+        })?.initialCode || '// Write your code here';
 
         setProblem(response.data);
         setCode(initialCode);
-        setLoading(false);
         
       } catch (error) {
         console.error('Error fetching problem:', error);
-        setError(error.response?.data || 'Failed to fetch problem');
+        setError('Failed to load problem. Please try refreshing the page.');
+        // Error popup is handled by axiosClient interceptor
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchProblem();
-  }, [problemId]);
+    if (problemId) {
+      fetchProblem();
+    } else {
+      setError('Invalid problem ID');
+      setLoading(false);
+    }
+  }, [problemId, selectedLanguage]);
 
   // Update code when language changes
   useEffect(() => {
@@ -94,8 +105,17 @@ const ProblemPage = () => {
   };
 
   const handleRun = async () => {
+    // Validate code before submission
+    if (!code || !code.trim()) {
+      if (window.popupManager) {
+        window.popupManager.showValidationError('Please write some code before running');
+      }
+      return;
+    }
+
     setLoading(true);
     setRunResult(null);
+    setError(null);
 
     try {
       const response = await axiosClient.post(`/submission/run/${problemId}`, {
@@ -104,31 +124,46 @@ const ProblemPage = () => {
       });
 
       setRunResult(response.data);
-      setError(null);
+      
       if (response.data.success) {
-        // Show success popup
+        // Success popup is shown by PopupManager
+      } else {
+        // Show specific run failure message
         if (window.popupManager) {
-          window.popupManager.showRun();
+          window.popupManager.showError(
+            response.data.error || 'Code execution failed', 
+            'Execution Error'
+          );
         }
       }
-      setLoading(false);
       setActiveRightTab('testcase');
       
     } catch (error) {
-      console.error('Error running code: ', error);
-      setError(error.response?.data || 'Failed to run code');
+      console.error('Error running code:', error);
+      setError('Failed to run code. Please try again.');
       setRunResult({
         success: false,
-        error: 'Internal server error'
+        error: error.message || 'Internal server error'
       });
-      setLoading(false);
       setActiveRightTab('testcase');
+      // Error popup is handled by axiosClient interceptor
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSubmitCode = async () => {
+    // Validate code before submission
+    if (!code || !code.trim()) {
+      if (window.popupManager) {
+        window.popupManager.showValidationError('Please write some code before submitting');
+      }
+      return;
+    }
+
     setLoading(true);
     setSubmitResult(null);
+    setError(null);
     
     try {
         const response = await axiosClient.post(`/submission/submit/${problemId}`, {
@@ -137,22 +172,28 @@ const ProblemPage = () => {
       });
 
        setSubmitResult(response.data);
-       setError(null);
+       
        if (response.data.accepted) {
-         // Show success popup
+         // Success popup is shown by PopupManager
+       } else {
+         // Show specific submission failure message
          if (window.popupManager) {
-           window.popupManager.showSubmit('Solution accepted! Congratulations!');
+           window.popupManager.showError(
+             response.data.error || 'Solution was not accepted', 
+             'Submission Failed'
+           );
          }
        }
-       setLoading(false);
        setActiveRightTab('result');
       
     } catch (error) {
-      console.error('Error submitting code: ', error);
-      setError(error.response?.data || 'Failed to submit code');
+      console.error('Error submitting code:', error);
+      setError('Failed to submit code. Please try again.');
       setSubmitResult(null);
-      setLoading(false);
       setActiveRightTab('result');
+      // Error popup is handled by axiosClient interceptor
+    } finally {
+      setLoading(false);
     }
   };
   

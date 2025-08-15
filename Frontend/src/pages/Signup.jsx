@@ -5,9 +5,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { registerUser } from '../authSlice';
-import ErrorBox from '../components/ErrorBox';
-import SuccessBox from '../components/SuccessBox';
-import { toast } from "react-toastify";
 
 const signupSchema = z.object({
     firstName: z.string().min(3, "Name should contain at least 3 characters"),
@@ -21,7 +18,7 @@ function Signup() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    const { isAuthenticated, loading, error, success } = useSelector((state) => state.auth);
+    const { isAuthenticated, loading } = useSelector((state) => state.auth);
 
     const {
         register,
@@ -31,25 +28,56 @@ function Signup() {
 
     useEffect(() => {
         if (isAuthenticated) navigate('/');
-    }, [isAuthenticated]);
+    }, [isAuthenticated, navigate]);
 
-    const onSubmit = (data) => {
-        dispatch(registerUser(data));
-    };
+    const onSubmit = async (data, event) => {
+        // Prevent default form submission
+        event?.preventDefault();
+        
+        // Client-side validation
+        if (!data.firstName?.trim()) {
+            if (window.popupManager) {
+                window.popupManager.showValidationError('Please enter your first name');
+            }
+            return;
+        }
+        
+        if (!data.emailId?.trim()) {
+            if (window.popupManager) {
+                window.popupManager.showValidationError('Please enter your email address');
+            }
+            return;
+        }
+        
+        if (!data.password?.trim()) {
+            if (window.popupManager) {
+                window.popupManager.showValidationError('Please enter a password');
+            }
+            return;
+        }
 
-    const handleSignup = async (e) => {
-        e.preventDefault();
-        try {
-            await onSubmit();
-            toast.success("Registered successfully!");
-        } catch (err) {
-            toast.error(err.response?.data || "Registration failed!");
+        if (data.password.length < 4) {
+            if (window.popupManager) {
+                window.popupManager.showValidationError('Password must be at least 4 characters long');
+            }
+            return;
+        }
+
+        const result = await dispatch(registerUser(data));
+        
+        if (registerUser.fulfilled.match(result)) {
+            // Success is handled in authSlice with popup
+            // Navigate only after successful registration
+            setTimeout(() => navigate('/'), 1000);
+        } else if (registerUser.rejected.match(result)) {
+            // Error is already handled in authSlice with popup
+            console.error('Registration failed:', result.payload?.message);
         }
     };
 
     return (
         <form
-            onSubmit={handleSignup}
+            onSubmit={handleSubmit(onSubmit)}
             className="min-h-screen flex justify-center items-center bg-base-200 p-4"
         >
             <div className="card w-full max-w-md p-8 bg-base-100 shadow-xl rounded-lg">

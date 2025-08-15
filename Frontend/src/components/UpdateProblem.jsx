@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import axiosClient from '../utils/axiosClient';
-import ConfirmationPopup from './ConfirmationPopup';
+import ConfirmationModal from './ConfirmationModal';
+import ErrorBox from './ErrorBox';
 import { Edit, Home } from 'lucide-react';
 
 const UpdateProblem = () => {
@@ -9,7 +10,7 @@ const UpdateProblem = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedProblem, setSelectedProblem] = useState(null);
-  const [showConfirmPopup, setShowConfirmPopup] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,22 +24,35 @@ const UpdateProblem = () => {
       setProblems(data);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch problems');
-      console.error(err);
+      console.error('Error fetching problems:', err);
+      setError('Failed to fetch problems. Please try again.');
+      // Error popup is handled by axiosClient interceptor
     } finally {
       setLoading(false);
     }
   };
 
   const handleUpdate = (problem) => {
+    if (!problem) {
+      if (window.popupManager) {
+        window.popupManager.showError('Problem not found');
+      }
+      return;
+    }
     setSelectedProblem(problem);
-    setShowConfirmPopup(true);
+    setShowConfirmModal(true);
   };
 
   const confirmUpdate = () => {
-    setShowConfirmPopup(false);
-    // Navigate to problem details page with edit mode
-    navigate(`/problem/${selectedProblem._id}?mode=edit`);
+    setShowConfirmModal(false);
+    if (selectedProblem) {
+      // Navigate to problem details page with edit mode
+      navigate(`/problem/${selectedProblem._id}?mode=edit`);
+      // Show info popup
+      if (window.popupManager) {
+        window.popupManager.showUpdate('Redirecting to edit mode...');
+      }
+    }
   };
 
   const handleGoHome = () => {
@@ -57,17 +71,17 @@ const UpdateProblem = () => {
     return (
       <div className="container mx-auto p-4">
         <div className="mb-6">
-          <div className="alert alert-error shadow-lg">
-            <div>
-              <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>{error}</span>
-            </div>
-          </div>
+          <ErrorBox 
+            error={error} 
+            onClose={() => setError(null)}
+            variant="error"
+          />
         </div>
         <button 
-          onClick={() => setError(null)}
+          onClick={() => {
+            setError(null);
+            fetchProblems();
+          }}
           className="btn btn-primary"
         >
           Try Again
@@ -154,17 +168,17 @@ const UpdateProblem = () => {
         </table>
       </div>
 
-      {/* Confirmation Popup */}
-      <ConfirmationPopup
-        isOpen={showConfirmPopup}
-        onClose={() => setShowConfirmPopup(false)}
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
         onConfirm={confirmUpdate}
         title="Update Problem"
         message={`Are you sure you want to update "${selectedProblem?.title}"? You will be redirected to the problem details page where you can make your changes.`}
         confirmText="Update Problem"
         cancelText="Cancel"
         type="info"
-        icon={<Edit className="w-8 h-8 text-blue-500" />}
+        customIcon={<Edit className="w-8 h-8 text-blue-500" />}
       />
     </div>
   );

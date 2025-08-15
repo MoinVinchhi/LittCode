@@ -86,17 +86,70 @@ function CreateProblem() {
     const onSubmit = async (data) => {
         try {
             setError(null);
-            await axiosClient.post('/problem/create', data);
-            // Show success popup
-            if (window.popupManager) {
-                window.popupManager.showCreate();
+            
+            // Additional client-side validation
+            if (!data.title?.trim()) {
+                if (window.popupManager) {
+                    window.popupManager.showValidationError('Problem title is required');
+                }
+                return;
             }
+            
+            if (!data.description?.trim()) {
+                if (window.popupManager) {
+                    window.popupManager.showValidationError('Problem description is required');
+                }
+                return;
+            }
+            
+            if (!data.visibleTestCases || data.visibleTestCases.length === 0) {
+                if (window.popupManager) {
+                    window.popupManager.showValidationError('At least one visible test case is required');
+                }
+                return;
+            }
+            
+            if (!data.hiddenTestCases || data.hiddenTestCases.length === 0) {
+                if (window.popupManager) {
+                    window.popupManager.showValidationError('At least one hidden test case is required');
+                }
+                return;
+            }
+            
+            // Validate that all code templates are provided
+            const requiredLanguages = ['C++', 'Java', 'JavaScript'];
+            const missingStartCode = requiredLanguages.filter(lang => 
+                !data.startCode.find(sc => sc.language === lang && sc.initialCode?.trim())
+            );
+            
+            if (missingStartCode.length > 0) {
+                if (window.popupManager) {
+                    window.popupManager.showValidationError(`Starter code is missing for: ${missingStartCode.join(', ')}`);
+                }
+                return;
+            }
+            
+            const missingRefCode = requiredLanguages.filter(lang => 
+                !data.referenceSolution.find(rs => rs.language === lang && rs.completeCode?.trim())
+            );
+            
+            if (missingRefCode.length > 0) {
+                if (window.popupManager) {
+                    window.popupManager.showValidationError(`Reference solution is missing for: ${missingRefCode.join(', ')}`);
+                }
+                return;
+            }
+
+            await axiosClient.post('/problem/create', data);
+            // Success popup is shown by PopupManager
             setTimeout(() => {
                 navigate('/');
             }, 2000);
         }
         catch (error) {
+            console.error('Error creating problem:', error);
             setError(error.response?.data?.message || error.message || 'Failed to create problem');
+            // Error popup is handled by axiosClient interceptor
         }
     };
 

@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import axiosClient from '../utils/axiosClient'
-import ConfirmationPopup from './ConfirmationPopup';
+import ConfirmationModal from './ConfirmationModal';
+import ErrorBox from './ErrorBox';
 import { Trash2, Home } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 const DeleteProblem = () => {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedProblem, setSelectedProblem] = useState(null);
-  const [showConfirmPopup, setShowConfirmPopup] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const navigate = useNavigate();
 
 
@@ -22,9 +24,11 @@ const DeleteProblem = () => {
       setLoading(true);
       const { data } = await axiosClient.get('/problem/allproblems');
       setProblems(data);
+      setError(null);
     } catch (err) {
-      setError('Failed to fetch problems');
-      console.error(err);
+      console.error('Error fetching problems:', err);
+      setError('Failed to fetch problems. Please try again.');
+      // Error popup is handled by axiosClient interceptor
     } finally {
       setLoading(false);
     }
@@ -32,24 +36,36 @@ const DeleteProblem = () => {
 
   const handleDelete = async (id) => {
     const problem = problems.find(p => p._id === id);
+    if (!problem) {
+      if (window.popupManager) {
+        window.popupManager.showError('Problem not found');
+      }
+      return;
+    }
     setSelectedProblem(problem);
-    setShowConfirmPopup(true);
+    setShowConfirmModal(true);
   };
 
   const confirmDelete = async () => {
+    if (!selectedProblem) return;
+    
     try {
+      setDeleteLoading(true);
       await axiosClient.delete(`/problem/delete/${selectedProblem._id}`);
       setProblems(problems.filter(problem => problem._id !== selectedProblem._id));
-      setShowConfirmPopup(false);
+      setShowConfirmModal(false);
       setSelectedProblem(null);
+      setError(null);
       
-      // Show success popup
-      if (window.popupManager) {
-        window.popupManager.showDelete();
-      }
+      // Success popup is shown by PopupManager
     } catch (err) {
-      setError('Failed to delete problem');
-      console.error(err);
+      console.error('Error deleting problem:', err);
+      setError('Failed to delete problem. Please try again.');
+      // Error popup is handled by axiosClient interceptor
+    } finally {
+      setDeleteLoading(false);
+      setShowConfirmModal(false);
+      setSelectedProblem(null);
     }
   };
 
@@ -148,17 +164,18 @@ const DeleteProblem = () => {
         </table>
       </div>
 
-      {/* Confirmation Popup */}
-      <ConfirmationPopup
-        isOpen={showConfirmPopup}
-        onClose={() => setShowConfirmPopup(false)}
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
         onConfirm={confirmDelete}
         title="Delete Problem"
-        message={`Are you sure you want to delete "${selectedProblem?.title}"? This action cannot be undone.`}
+        message={`Are you sure you want to delete "${selectedProblem?.title}"? This action cannot be undone and will permanently remove the problem and all associated data.`}
         confirmText="Delete Problem"
         cancelText="Cancel"
         type="danger"
-        icon={<Trash2 className="w-8 h-8 text-red-500" />}
+        loading={deleteLoading}
+        customIcon={<Trash2 className="w-8 h-8 text-red-500" />}
       />
     </div>
   );
