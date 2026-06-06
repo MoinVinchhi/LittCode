@@ -9,8 +9,8 @@ const problemRouter = require('./routes/problemRoute');
 const submitRouter = require('./routes/submitRoute');
 const aiRouter = require('./routes/aiChatRoute');
 const videoRouter = require('./routes/videoRoute');
+const healthRouter = require('./routes/healthRoute')
 const cors = require('cors');
-
 
 const allowedOrigins = [
     process.env.FRONTEND_URI,
@@ -38,7 +38,7 @@ app.use('/problem', problemRouter);
 app.use('/submission', submitRouter);
 app.use('/ai', aiRouter);
 app.use('/video', videoRouter);
-
+app.use('/health', healthRouter);
 
 const InitializeConnection = async () => {
     try {
