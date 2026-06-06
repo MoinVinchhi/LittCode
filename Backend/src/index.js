@@ -11,6 +11,7 @@ const aiRouter = require('./routes/aiChatRoute');
 const videoRouter = require('./routes/videoRoute');
 const healthRouter = require('./routes/healthRoute')
 const cors = require('cors');
+const { startHealthCheckCron } = require('./utils/cron');
 
 const allowedOrigins = [
     process.env.FRONTEND_URI,
@@ -48,6 +49,7 @@ const InitializeConnection = async () => {
         const PORT = process.env.PORT || 5000;
         app.listen(PORT, () => {
         console.log("Server Is Listening On PORT: " + PORT);
+        startHealthCheckCron(PORT);
         });
     }
     catch (err) {
