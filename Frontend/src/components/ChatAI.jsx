@@ -70,18 +70,20 @@ function ChatAi({problem}) {
                 <div ref={messagesEndRef} />
             </div>
 
-            <form 
-                onSubmit={handleSubmit(onSubmit)} 
-                className="sticky bottom-0 p-4 pb-1  bg-base-100 border-t"
+            <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="sticky bottom-0 p-4 pb-1 bg-base-100 border-t"
+                autoComplete="off"
             >
                 <div className="flex items-center">
-                    <input 
-                        placeholder="Ask me anything" 
-                        className="input input-bordered flex-1" 
+                    <input
+                        placeholder="Ask me anything..."
+                        className="input input-bordered flex-1 focus:outline-none"
+                        autoComplete="off"
                         {...register("message", { required: true, minLength: 2 })}
                     />
-                    <button 
-                        type="submit" 
+                    <button
+                        type="submit"
                         className="btn btn-ghost ml-2"
                         disabled={errors.message}
                     >

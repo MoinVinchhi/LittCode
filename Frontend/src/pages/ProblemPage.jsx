@@ -5,7 +5,7 @@ import { useParams, useNavigate } from 'react-router';
 import axiosClient from "../utils/axiosClient"
 import SubmissionHistory from '../components/SubmissionHistory';
 import ChatAI from '../components/ChatAI';
-import { Terminal, Code, Home } from 'lucide-react';
+import { Terminal, Code, ChevronLeft } from 'lucide-react';
 import Editorial from '../components/Editorial';
 import ErrorBox from '../components/ErrorBox';
 
@@ -280,10 +280,10 @@ const ProblemPage = () => {
           {/* LittCode Button */}
           <button 
             onClick={() => navigate('/')}
-            className="btn btn-primary btn-sm btn-outline flex items-center gap-2"
+            className="btn btn-primary btn-sm btn-outline flex items-center gap-0"
           >
-            <Home size={20} />
-            LittCode
+            <ChevronLeft size={20} />
+            Home
           </button>
         </div>
 
